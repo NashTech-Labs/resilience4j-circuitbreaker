@@ -1,0 +1,50 @@
+spring:
+  application.name: circuit-breaker-resilience4j
+  jackson.serialization.indent_output: true
+
+server:
+  port: 9080
+
+management.endpoints.web.exposure.include: '*'
+management.endpoint.health.show-details: always
+
+management.health.diskspace.enabled: false
+management.health.circuitbreakers.enabled: true
+management.health.ratelimiters.enabled: false
+
+info:
+  name: ${spring.application.name}
+  description: CircuitBreaker Resilience4j
+  environment: ${spring.profiles.active}
+  version: 0.0.1
+
+management.metrics.tags.application: ${spring.application.name}
+management.metrics.distribution.percentiles-histogram.http.server.requests: true
+management.metrics.distribution.percentiles-histogram.resilience4j.circuitbreaker.calls: true
+
+#resilience4j.circuitbreaker.metrics.use_legacy_binder: true
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      registerHealthIndicator: true
+      slidingWindowSize: 5
+      minimumNumberOfCalls: 5
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      waitDurationInOpenState: 5s
+      failureRateThreshold: 50
+      eventConsumerBufferSize: 10
+      recordExceptions:
+      - org.springframework.web.client.HttpServerErrorException
+      - java.util.concurrent.TimeoutException
+      - java.io.IOException
+    shared:
+      slidingWindowSize: 100
+      permittedNumberOfCallsInHalfOpenState: 30
+      waitDurationInOpenState: 1s
+      failureRateThreshold: 50
+      eventConsumerBufferSize: 10
+  instances:
+    userService:
+      baseConfig: default
